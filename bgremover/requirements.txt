@@ -1,0 +1,5 @@
+flask
+rembg
+opencv-python
+numpy
+gunicorn
