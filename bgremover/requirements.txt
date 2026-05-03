@@ -1,5 +1,5 @@
 flask
 rembg
-opencv-python
+opencv-python-headless
 numpy
 gunicorn
