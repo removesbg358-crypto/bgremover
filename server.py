@@ -7,8 +7,14 @@ import uuid
 
 app = Flask(__name__)
 
-# ✅ LIGHT MODEL (FREE HOSTING SAFE)
-session = new_session("u2netp")
+# ✅ LAZY LOAD MODEL (IMPORTANT FIX)
+session = None
+
+def get_session():
+    global session
+    if session is None:
+        session = new_session("u2netp")  # lightweight model
+    return session
 
 
 def refine_edges(image_bytes):
@@ -56,13 +62,11 @@ def remove_bg():
     file = request.files['image']
     input_data = file.read()
 
-    # ✅ REMOVE BACKGROUND
-    raw_output = remove(input_data, session=session)
+    # ✅ LAZY LOAD SESSION
+    raw_output = remove(input_data, session=get_session())
 
-    # ✅ EDGE CLEAN
     final_output = refine_edges(raw_output)
 
-    # ✅ UNIQUE FILE (avoid overwrite issue)
     filename = f"output_{uuid.uuid4().hex}.png"
     filepath = os.path.join("/tmp", filename)
 
@@ -72,7 +76,7 @@ def remove_bg():
     return send_file(filepath, mimetype='image/png')
 
 
-# ✅ RENDER DEPLOY FIX
+# ✅ RENDER FIX
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
