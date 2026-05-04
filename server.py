@@ -6,13 +6,16 @@ import os
 
 app = Flask(__name__)
 
-# ✅ AUTO DOWNLOAD MODEL (IMPORTANT FIX)
+# ✅ AUTO DOWNLOAD MODEL
 session = new_session("isnet-general-use")
 
 
 def refine_edges(image_bytes):
     nparr = np.frombuffer(image_bytes, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_UNCHANGED)
+
+    if img is None:
+        return image_bytes
 
     if img.shape[2] == 4:
         alpha = img[:, :, 3]
@@ -27,9 +30,9 @@ def refine_edges(image_bytes):
             cv2.drawContours(mask, [largest], -1, 255, -1)
             alpha = cv2.bitwise_and(alpha, mask)
 
-        kernel = np.ones((2,2), np.uint8)
+        kernel = np.ones((2, 2), np.uint8)
         alpha = cv2.erode(alpha, kernel, iterations=1)
-        alpha = cv2.GaussianBlur(alpha, (3,3), 0)
+        alpha = cv2.GaussianBlur(alpha, (3, 3), 0)
 
         img[:, :, 3] = alpha
 
@@ -44,6 +47,9 @@ def home():
 
 @app.route('/remove-bg', methods=['POST'])
 def remove_bg():
+    if 'image' not in request.files:
+        return "No file uploaded", 400
+
     file = request.files['image']
     input_data = file.read()
 
@@ -57,5 +63,7 @@ def remove_bg():
     return send_file(output_path, mimetype='image/png')
 
 
+# ✅ IMPORTANT FOR RENDER
 if __name__ == "__main__":
-    app.run()
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
