@@ -3,11 +3,12 @@ from rembg import remove, new_session
 import cv2
 import numpy as np
 import os
+import uuid
 
 app = Flask(__name__)
 
-# ✅ AUTO DOWNLOAD MODEL
-session = new_session("isnet-general-use")
+# ✅ LIGHT MODEL (FREE HOSTING SAFE)
+session = new_session("u2netp")
 
 
 def refine_edges(image_bytes):
@@ -22,7 +23,9 @@ def refine_edges(image_bytes):
 
         _, thresh = cv2.threshold(alpha, 120, 255, cv2.THRESH_BINARY)
 
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         if contours:
             largest = max(contours, key=cv2.contourArea)
@@ -53,17 +56,23 @@ def remove_bg():
     file = request.files['image']
     input_data = file.read()
 
+    # ✅ REMOVE BACKGROUND
     raw_output = remove(input_data, session=session)
+
+    # ✅ EDGE CLEAN
     final_output = refine_edges(raw_output)
 
-    output_path = "output.png"
-    with open(output_path, "wb") as f:
+    # ✅ UNIQUE FILE (avoid overwrite issue)
+    filename = f"output_{uuid.uuid4().hex}.png"
+    filepath = os.path.join("/tmp", filename)
+
+    with open(filepath, "wb") as f:
         f.write(final_output)
 
-    return send_file(output_path, mimetype='image/png')
+    return send_file(filepath, mimetype='image/png')
 
 
-# ✅ IMPORTANT FOR RENDER
+# ✅ RENDER DEPLOY FIX
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
