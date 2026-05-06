@@ -1,5 +1,5 @@
 flask
-rembg
-opencv-python-headless
-numpy
 gunicorn
+rembg[cpu]
+pillow
+onnxruntime
